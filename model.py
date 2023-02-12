@@ -13,46 +13,20 @@ class BaseModel(nn.Module):
         self.num_user = num_user
         self.num_item = num_item
         self.dims = dims
-        self.SOPA = torch.zeros(self.num_user).to('cuda')
-        self.SOPA_shift = torch.zeros(self.num_user).to('cuda')
         self.count = 0
         
-    def reinit(self):
-        self.SOPA = torch.zeros(self.num_user).to('cuda')
-        self.SOPA_shift = torch.zeros(self.num_user).to('cuda')
 
     def forward(self, user_id, pos_id, neg_id):
         pass
     
 
-    def loss_function(self, neg_rat, neg_prob, pos_rat, user_id=None, reduction=False, weighted=False, pos_rank=None, lambda_w=1.0, loss_type=0, beta=1,  moving_estimator=0, max_shift=0, user_ratio=1, **kwargs):
-        """
-        Bpr loss 0-12
-        """
-        if loss_type == 3:  # 上界loss
-            pred = torch.subtract(pos_rat.unsqueeze(1), neg_rat)
-            pre_pair = torch.exp(torch.negative(F.logsigmoid(pred))/lambda_w)
-            loss = torch.log(torch.mean(pre_pair, dim=-1)).sum(-1)
-            return loss
-
-        if loss_type == 4:  # softmax loss
-            pred = torch.subtract(pos_rat.unsqueeze(1), neg_rat)
-            pre_pair = torch.exp(torch.negative(pred)/lambda_w).sum(-1)
-            return torch.log(1+pre_pair).sum(-1)
+    def loss_function(self, neg_rat, neg_prob, pos_rat, user_id=None, reduction=False, weighted=False, pos_rank=None, lambda_w=1.0, loss_type=0, beta=1, **kwargs):
         
-        if loss_type == 5:  # DNS loss
+        if loss_type == 1:  # DNS loss
             neg_rat, _ = torch.topk(neg_rat, int(lambda_w), dim=-1)
             pred = torch.subtract(pos_rat.unsqueeze(1), neg_rat)
             loss = torch.negative(F.logsigmoid(pred))
             return torch.sum(loss, dim=-1).sum(-1)
-
-        if loss_type == 9: # variant loss
-            pred = torch.subtract(pos_rat.unsqueeze(1), neg_rat)
-            pre_pair = torch.negative(F.logsigmoid(pred))
-            dat_var = torch.var(pre_pair, dim=-1)
-            loss = torch.sum(pre_pair, dim=-1) + torch.sqrt(lambda_w * dat_var)
-            return loss.sum(-1)
-        
             
         pred = torch.subtract(pos_rat.unsqueeze(1), neg_rat)
         
@@ -60,117 +34,13 @@ class BaseModel(nn.Module):
             if weighted:
                 if loss_type == 0:
                     importance = F.softmax(torch.negative(pred)/lambda_w - neg_prob, dim=1)
-                elif loss_type ==1:
-                    importance = F.softmax(torch.negative(F.logsigmoid(pred))/lambda_w - neg_prob, dim=1)
-                
-                elif loss_type == 10:
-                    # Renyi divergence
-                    L = torch.negative(F.logsigmoid(pred))
-                    normi = torch.pow((1+(beta-1)*L/lambda_w), 1/(beta-1))
-                    importance = F.softmax(normi, dim=1)
                     
-                elif loss_type == 11:
-                    # global softmax loss
-                    L = torch.negative(F.logsigmoid(pred)) / lambda_w
-                    L_flatten = L.reshape(-1)
-                    
-                    # set topK as zero
-                    _, index = L_flatten.topk(k=int(beta*L.numel()), dim=0)
-                    L_flatten[index] = 0
-                    
-                    
-                    importance_flatten = F.softmax(L_flatten)
-                    importance = importance_flatten.reshape(L.shape) * L.shape[0]
-                    
-                    
-                elif loss_type ==2:
-                    '''
-                    binary_loss = torch.negative(F.logsigmoid(pred))/lambda_w
-                    exp_loss = binary_loss.exp()
-                    temp = exp_loss.sum(dim=1)
-                    importance = exp_loss / (temp * beta + (1-beta) * self.SOPA[user_id]).unsqueeze(-1)
-                    
-                    self.SOPA[user_id] = (1-beta) * self.SOPA[user_id] + beta * temp
-                    '''
-                    if beta == 1.0: 
-                        importance = F.softmax(torch.negative(F.logsigmoid(pred))/lambda_w - neg_prob, dim=1)
-                    else:
-                        binary_loss = torch.negative(F.logsigmoid(pred))/lambda_w
-                        shift, _ = torch.max(binary_loss, dim=1)
-                        
-                        max_shift = torch.maximum(shift, self.SOPA_shift[user_id])  # max shift between now and before
-                        gap_shift = self.SOPA_shift[user_id] - max_shift
-                        
-                        binary_loss = binary_loss - max_shift.unsqueeze(dim=-1)
-                        
-                        exp_loss = binary_loss.exp()
-                        temp = exp_loss.sum(dim=1)
-                        
-                        importance = exp_loss / (temp * beta + (1-beta) * self.SOPA[user_id] * torch.exp(gap_shift) + 1e-12).unsqueeze(-1)
-                        
-                        self.SOPA[user_id] = temp * beta + (1-beta) * self.SOPA[user_id] * torch.exp(gap_shift)
-                        self.SOPA_shift[user_id] = max_shift
-                    
-                elif loss_type == 6:
+                elif loss_type == 2:
                     Z = torch.negative(F.logsigmoid(pred))
                     tau = torch.sqrt( torch.var(Z, dim=1, keepdim=True)/(2*lambda_w) )
                     importance = F.softmax(Z/tau - neg_prob, dim=1) 
-                
-                elif loss_type == 12:
-                    Z = torch.negative(F.logsigmoid(pred))
-                    lambda_ = lambda_w * user_ratio[user_id]
-                    tau = torch.sqrt( torch.var(Z, dim=1, keepdim=True)/(2*lambda_.unsqueeze(1)) )
-                    importance = F.softmax(Z/tau - neg_prob, dim=1)  
+                 
                     
-                elif loss_type == 7:
-                    Z = torch.negative(F.logsigmoid(pred))
-                    tau = torch.sqrt( torch.var(Z, dim=1, keepdim=True)/(2*lambda_w) )
-                    
-                    if beta == 1.0: 
-                        importance = F.softmax(Z/tau - neg_prob, dim=1) 
-                    else:
-                        binary_loss = Z/tau
-                        shift, _ = torch.max(binary_loss, dim=1)
-                        
-                        max_shift = torch.maximum(shift, self.SOPA_shift[user_id])  # max shift between now and before
-                        gap_shift = self.SOPA_shift[user_id] - max_shift
-                        
-                        binary_loss = binary_loss - max_shift.unsqueeze(dim=-1)
-                        
-                        exp_loss = binary_loss.exp()
-                        temp = exp_loss.sum(dim=1)
-                        
-                        importance = exp_loss / (temp * beta + (1-beta) * self.SOPA[user_id] * torch.exp(gap_shift) + 1e-12).unsqueeze(-1)
-                        
-                        self.SOPA[user_id] = temp * beta + (1-beta) * self.SOPA[user_id] * torch.exp(gap_shift)
-                        self.SOPA_shift[user_id] = max_shift
-
-                        self.count += 1
-                        if self.count > 100:
-                            self.reinit()
-                
-                elif loss_type == 8:
-                    Z = torch.negative(F.logsigmoid(pred))
-                    tau = torch.sqrt( torch.var(Z, dim=1, keepdim=True)/(2*lambda_w) )
-                    
-                    if beta == 1.0: 
-                        importance = F.softmax(Z/tau - neg_prob, dim=1) 
-                    else:
-                        binary_loss = Z/tau
-                        shift, _ = torch.max(binary_loss, dim=1)
-                        
-                        maximum_shift = torch.maximum(shift, max_shift)  # max shift between now and before
-                        gap_shift = moving_estimator - maximum_shift
-                        
-                        binary_loss = binary_loss - maximum_shift.unsqueeze(dim=-1)
-                        
-                        exp_loss = binary_loss.exp()
-                        temp = exp_loss.sum(dim=1)
-                        
-                        importance = exp_loss / (temp * beta + (1-beta) * moving_estimator * torch.exp(gap_shift) + 1e-12).unsqueeze(-1)
-                        
-                        m = temp * beta + (1-beta) * moving_estimator * torch.exp(gap_shift)
-                        n = maximum_shift
             else:
                 importance = F.softmax(torch.ones_like(pred), dim=1)
 
@@ -178,10 +48,11 @@ class BaseModel(nn.Module):
             importance = importance * pos_rank
 
         weight_loss = torch.multiply(importance.detach(), torch.negative(F.logsigmoid(pred)))
+        
         if reduction:
-            return torch.sum(weight_loss, dim=-1).mean(-1), m, n
+            return torch.sum(weight_loss, dim=-1).mean(-1)
         else:
-            return torch.sum(weight_loss, dim=-1).sum(-1), m, n
+            return torch.sum(weight_loss, dim=-1).sum(-1)
 
     def inference(self, user_id, item_id):
         pass
