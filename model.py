@@ -170,7 +170,6 @@ class GMF(BaseMF):
         inferences = self._FC(gmf_out)
         return inferences.squeeze(-1)
     
-    
 class LightGCN(BaseModel):
     def __init__(self, num_user, num_item, dims, **kwargs):
         super().__init__(num_user, num_item, dims)
@@ -188,7 +187,7 @@ class LightGCN(BaseModel):
         coo = X.tocoo()
         i = torch.LongTensor([coo.row, coo.col])
         v = torch.from_numpy(coo.data).float()
-        return torch.sparse.FloatTensor(i, v, coo.shape).to('cuda')
+        return torch.sparse.FloatTensor(i, v, coo.shape)
 
     def compute(self):
         users_emb = self._User_Embedding.weight
@@ -225,7 +224,7 @@ class LightGCN(BaseModel):
     
     def predict(self, user_id, items=None):
         if items is None:
-            items = list(range(self.n_items))
+            items = list(range(self.num_item))
 
         all_users, all_items = self.compute()
 
@@ -233,4 +232,4 @@ class LightGCN(BaseModel):
         items = torch.transpose(all_items[torch.tensor(items).to('cuda')], 0, 1)
         rate_batch = torch.matmul(users, items)
 
-        return rate_batch.cpu().detach().numpy()
+        return rate_batch.detach()
