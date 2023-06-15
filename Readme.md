@@ -31,9 +31,9 @@ This is our PyTorch implementation for the paper 2023'WWW:
     + 5: AdaSIR pop
     
 + loss_type
-    + 0: AdaSIR
-    + 1: DNS(M, N)
-    + 2: Softmax(\rho, N)
+    + 0: `AdaSIR`
+    + 1: `DNS(M, N)`
+    + 2: `Softmax(\rho, N)`
 
 ## Running Example
 
