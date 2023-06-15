@@ -39,7 +39,7 @@ This is our PyTorch implementation for the paper 2023'WWW:
 
 `python main_more.py --lambda_w 2 --sampler 0 --sample_num 200 --fix_seed --weighted --loss_type 1` for DNS(M, N)
 
-`python main_more.py --lambda_w 1 --sampler 0 --sample_num 200 --fix_seed --weighted --loss_type 2` for Softmax(\rho, N)
+`python main_more.py --lambda_w 1 --sampler 0 --sample_num 200 --fix_seed --weighted --loss_type 2` for `Softmax(\rho, N)`
 
 
 
