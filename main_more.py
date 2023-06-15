@@ -29,9 +29,6 @@ def evaluate(model, train_mat, test_mat, config, logger, device, topk=50):
         m = evals.test_GPU_model(model, train_mat, test_mat)
     return m
 
-
-
-# @profile
 def train_model(model, sampler, train_mat, test_mat, config, logger):
     optimizer = utils_optim(config.learning_rate, config.weight_decay, config.momentum, model)
     scheduler = StepLR(optimizer, config.step_size, config.gamma)
@@ -110,14 +107,11 @@ def main(config, logger=None):
     config.num_user = user_num
     config.num_item = item_num
     logging.info('The shape of datasets: %d, %d'%(user_num, item_num))
-
-    # sampler_list = [base_sampler, two_pass, two_pass_weight, base_sampler_pop, two_pass_pop, two_pass_weight_pop, tapast, two_pass_rank,two_pass_weight_rank ]
+    
     global sampler_list
     assert config.sampler < len(sampler_list), ValueError("Not supported sampler")
     sampler = sampler_list[config.sampler](user_num, item_num, config.sample_size, config.pool_size, config.sample_num, device, mat=train_mat)
 
-
-    # model_list = [BaseMF, NCF, GMF, MLP, LightGCN]
     global model_list
     assert config.model < len(model_list), ValueError("Not supported sampler")
     
@@ -198,7 +192,6 @@ if __name__ == "__main__":
     
 
     m = main(config, logger)
-    # print('ndcg@5,10,50, ', m['item_ndcg'][[4,9,49]])
 
     logger.info('Eval_Res : NDCG@5,20,50 %.6f, %.6f, %.6f'%(m['item_ndcg'][4], m['item_ndcg'][19], m['item_ndcg'][49]))
     logger.info('Eval_Res : RECALL@5,20,50 %.6f, %.6f, %.6f'%(m['item_recall'][4], m['item_recall'][19], m['item_recall'][49]))
