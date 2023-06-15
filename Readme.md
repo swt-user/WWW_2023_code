@@ -19,21 +19,21 @@ This is our PyTorch implementation for the paper 2023'WWW:
 + d
     + embedding size
 + m, model
-    + 0: matrix factorization
-    + 1: NCF
-    + 2: GMF
-    + 3: MLP
-    + 4: LightGCN
+    + 0: `matrix factorization`
+    + 1: `NCF`
+    + 2: `GMF`
+    + 3: `MLP`
+    + 4: `LightGCN`
 + sampler
-    + 0: uniform
-    + 2: AdaSIR uniform
-    + 3: popularity
-    + 5: AdaSIR pop
+    + 0: `uniform`
+    + 2: `AdaSIR uniform`
+    + 3: `popularity`
+    + 5: `AdaSIR pop`
     
 + loss_type
-    + 0: AdaSIR
-    + 1: DNS(M, N)
-    + 2: Softmax(\rho, N)
+    + 0: `AdaSIR`
+    + 1: `DNS(M, N)`
+    + 2: `Softmax(\rho, N)`
 
 ## Running Example
 
