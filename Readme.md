@@ -25,10 +25,10 @@ This is our PyTorch implementation for the paper 2023'WWW:
     + 3: MLP
     + 4: LightGCN
 + sampler
-    + 0: uniform
-    + 2: AdaSIR uniform
-    + 3: popularity
-    + 5: AdaSIR pop
+    + 0: `uniform`
+    + 2: `AdaSIR uniform`
+    + 3: `popularity`
+    + 5: `AdaSIR pop`
     
 + loss_type
     + 0: `AdaSIR`
