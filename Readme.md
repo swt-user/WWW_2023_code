@@ -19,11 +19,11 @@ This is our PyTorch implementation for the paper 2023'WWW:
 + d
     + embedding size
 + m, model
-    + 0: matrix factorization
-    + 1: NCF
-    + 2: GMF
-    + 3: MLP
-    + 4: LightGCN
+    + 0: `matrix factorization`
+    + 1: `NCF`
+    + 2: `GMF`
+    + 3: `MLP`
+    + 4: `LightGCN`
 + sampler
     + 0: `uniform`
     + 2: `AdaSIR uniform`
