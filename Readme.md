@@ -44,5 +44,4 @@ This is our PyTorch implementation for the paper 2023'WWW:
 ## Acknowledgement
 The project is built upon [AdaSIR](https://github.com/HERECJ/AdaSIR)
 
-
 For any clarification, comments, or suggestions please create an issue or contact me.
